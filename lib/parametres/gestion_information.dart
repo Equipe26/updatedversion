@@ -100,11 +100,12 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
     if (_currentUser != null) {
       if (_currentUser is Patient) {
         final patient = _currentUser as Patient;
-       
+        // For patients, use the location field for the address
+        _addressController.text = patient.location ?? "Non défini";
       
       } else if (_currentUser is HealthcareProfessional) {
         final hp = _currentUser as HealthcareProfessional;
-       
+        // For healthcare professionals, use the exactAddress field
         _addressController.text = hp.exactAddress;
         
         _specialtyController.text = hp.specialty?.displayName ?? hp.typeDisplay;
@@ -130,16 +131,16 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
 
     // Common fields for all user types
 
-    fields.add(_buildInfoField("Adresse postale", _addressController));
+    fields.add(_buildInfoField("Adresse postale", _addressController, isEditable: true));
     fields.add(const SizedBox(height: 15));
 
     
     // Healthcare professional specific fields
     if (_currentUser is HealthcareProfessional) {
       fields.add(const SizedBox(height: 15));
-      fields.add(_buildInfoField("Spécialité", _specialtyController));
+      fields.add(_buildInfoField("Spécialité", _specialtyController, isEditable: false));
       fields.add(const SizedBox(height: 15));
-      fields.add(_buildInfoField("Numéro de licence", _licenseController));
+      fields.add(_buildInfoField("Numéro de licence", _licenseController, isEditable: true));
     }
     
     return fields;
@@ -168,16 +169,12 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
             onPressed: () async {
               try {
                 // Determine which field is being updated
-                String? phoneNumber;
                 String? location;
-                String? emergencyContact;
                 String? exactAddress;
                 String? licenseNumber;
                 
                 // Set appropriate variables based on field title
-                if (title == "Numéro de téléphone") {
-                  phoneNumber = dialogController.text;
-                } else if (title == "Adresse postale" && _currentUser is Patient) {
+                if (title == "Adresse postale" && _currentUser is Patient) {
                   location = dialogController.text;
                 } else if (title == "Adresse postale" && _currentUser is HealthcareProfessional) {
                   exactAddress = dialogController.text;
@@ -195,17 +192,38 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
                   licenseNumber: licenseNumber,
                 );
                 
+                // Update the controller with the new value
+                controller.text = dialogController.text;
+                
                 // Refresh user data to ensure we have the latest info
                 await _refreshUserData();
 
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Information mise à jour')),
+                  SnackBar(
+                    content: Text('Information mise à jour avec succès'),
+                    backgroundColor: Colors.green,
+                    duration: Duration(seconds: 3),
+                  ),
                 );
               } catch (e) {
                 Navigator.pop(context);
+                
+                // Display a more user-friendly error message
+                String errorMessage = 'Erreur lors de la mise à jour';
+                
+                if (e.toString().contains('No authenticated user found')) {
+                  errorMessage = 'Vous devez être connecté pour modifier vos informations';
+                } else if (e.toString().contains('Failed to update user information')) {
+                  errorMessage = 'Échec de la mise à jour des informations';
+                }
+                
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Erreur: ${e.toString()}')),
+                  SnackBar(
+                    content: Text(errorMessage),
+                    backgroundColor: Colors.red,
+                    duration: Duration(seconds: 3),
+                  ),
                 );
               }
             },
@@ -274,7 +292,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
     );
   }
 
-  Widget _buildInfoField(String label, TextEditingController controller) {
+  Widget _buildInfoField(String label, TextEditingController controller, {bool isEditable = true}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -293,7 +311,6 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
           height: 55, // Fixed height
           decoration: BoxDecoration(
             color: Colors.grey[300],
-
             borderRadius: BorderRadius.circular(30),
           ),
           child: Row(
@@ -307,12 +324,13 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
                   style: const TextStyle(fontSize: 16),
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.edit, color: Colors.grey),
-                onPressed: () {
-                  _showEditDialog(label, controller);
-                },
-              ),
+              if (isEditable) 
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.grey),
+                  onPressed: () {
+                    _showEditDialog(label, controller);
+                  },
+                ),
             ],
           ),
         ),
