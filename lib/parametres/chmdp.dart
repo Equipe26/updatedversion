@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../auth_service.dart'; 
 
 import '../yyu.dart';
 
@@ -97,6 +98,14 @@ class para3State extends State<para3> {
   final confirmPasswordController = TextEditingController();
   String? _statusMessage; // for feedback message
   Color _statusColor = Colors.red; // red for errors, green for success
+  
+ 
+  bool _obscureCurrentPassword = true;
+  bool _obscureNewPassword = true;
+  bool _obscureConfirmPassword = true;
+  
+  final AuthService _authService = AuthService();
+
   @override
   void dispose() {
     currentPasswordController.dispose();
@@ -114,9 +123,8 @@ class para3State extends State<para3> {
       _statusMessage = null;
     });
 
-    if (currentPassword.isEmpty ||
-        newPassword.isEmpty ||
-        confirmPassword.isEmpty) {
+  
+    if (currentPassword.isEmpty || newPassword.isEmpty || confirmPassword.isEmpty) {
       setState(() {
         _statusMessage = "Veuillez remplir tous les champs.";
         _statusColor = Colors.red;
@@ -131,19 +139,45 @@ class para3State extends State<para3> {
       });
       return;
     }
-
+    
     try {
-      await Future.delayed(Duration(seconds: 1)); // simulate password update
-
+      // Show loading indicator
+      setState(() {
+        _statusMessage = "Mise à jour en cours...";
+        _statusColor = Colors.blue;
+      });
+      
+      // Call the AuthService method
+      await _authService.updatePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+      
+      // Success message
       setState(() {
         _statusMessage = "Mot de passe modifié avec succès.";
         _statusColor = Colors.green;
+        
+        // Clear form fields after successful update
+        currentPasswordController.clear();
+        newPasswordController.clear();
+        confirmPasswordController.clear();
       });
-
-      await Future.delayed(Duration(seconds: 1));
+      
     } catch (e) {
+      // Handle specific error messages
+      String errorMessage = "Une erreur est survenue. Veuillez réessayer.";
+      
+      if (e.toString().contains('Incorrect current password')) {
+        errorMessage = "Le mot de passe actuel est incorrect.";
+      } else if (e.toString().contains('too weak')) {
+        errorMessage = "Le nouveau mot de passe est trop faible.";
+      } else if (e.toString().contains('doit contenir au moins')) {
+        errorMessage = e.toString().replaceAll("Exception: ", "");
+      }
+      
       setState(() {
-        _statusMessage = "Une erreur est survenue. Veuillez réessayer.";
+        _statusMessage = errorMessage;
         _statusColor = Colors.red;
       });
     }
@@ -205,25 +239,31 @@ class para3State extends State<para3> {
                   ),
                   SizedBox(height: 20),
                   TextField(
-                    // Toggles hiding/showing password
                     controller: currentPasswordController,
+                    obscureText: _obscureCurrentPassword,
                     decoration: InputDecoration(
                       hintText: "Entrer Votre mot de passe actuel",
-                      // Make background gray and fill the entire shape
                       fillColor: Colors.grey[300],
                       filled: true,
-                      // Remove default border and make corners fully rounded
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(30),
                         borderSide: BorderSide.none,
                       ),
-                      // Control the space inside the text field
                       contentPadding: EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 14,
                       ),
-
-                      // The icon on the right to toggle password visibility
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureCurrentPassword ? Icons.visibility_off : Icons.visibility,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscureCurrentPassword = !_obscureCurrentPassword;
+                          });
+                        },
+                      ),
                     ),
                   ),
                   SizedBox(height: 20),
@@ -239,6 +279,7 @@ class para3State extends State<para3> {
                   TextField(
                     // Toggles hiding/showing password
                     controller: newPasswordController,
+                    obscureText: _obscureNewPassword,
                     decoration: InputDecoration(
                       hintText: "Entrez Votre nouveau mot de passe",
                       // Make background gray and fill the entire shape
@@ -254,8 +295,18 @@ class para3State extends State<para3> {
                         horizontal: 20,
                         vertical: 14,
                       ),
-
                       // The icon on the right to toggle password visibility
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureNewPassword ? Icons.visibility_off : Icons.visibility,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscureNewPassword = !_obscureNewPassword;
+                          });
+                        },
+                      ),
                     ),
                   ),
                   SizedBox(height: 20),
@@ -270,6 +321,7 @@ class para3State extends State<para3> {
                   SizedBox(height: 20),
                   TextField(
                     controller: confirmPasswordController,
+                    obscureText: _obscureConfirmPassword,
                     // Toggles hiding/showing password
                     decoration: InputDecoration(
                       hintText: "Confirmer Votre mot de passe",
@@ -286,8 +338,18 @@ class para3State extends State<para3> {
                         horizontal: 20,
                         vertical: 14,
                       ),
-
                       // The icon on the right to toggle password visibility
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscureConfirmPassword = !_obscureConfirmPassword;
+                          });
+                        },
+                      ),
                     ),
                   ),
                   if (_statusMessage != null)
