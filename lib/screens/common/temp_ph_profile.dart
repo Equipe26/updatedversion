@@ -18,16 +18,45 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final AuthService _authService = AuthService();
   void _handleLogout() async {
-    try {
-      await _authService.logout();
-      if (mounted) {
-        Navigator.pushReplacementNamed(
-            context, '/home'); // Or your desired route
-      }
-    } catch (e) {
-      print("Logout failed: $e");
-      // Optional: show an error dialog/snackbar
-    }
+    // Show confirmation dialog before logout
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Déconnexion'),
+          content: Text('Êtes-vous sûr de vouloir vous déconnecter?'),
+          actions: [
+            TextButton(
+              child: Text('Annuler'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Déconnecter'),
+              onPressed: () async {
+                Navigator.of(context).pop(); // Close dialog
+                try {
+                  await _authService.logout();
+                  if (mounted) {
+                    Navigator.pushNamedAndRemoveUntil(
+                      context, 
+                      '/home',
+                      (Route<dynamic> route) => false, // Remove all previous routes
+                    );
+                  }
+                } catch (e) {
+                  print("Logout failed: $e");
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Erreur lors de la déconnexion')),
+                  );
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
