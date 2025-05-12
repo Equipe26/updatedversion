@@ -28,6 +28,13 @@ class AuthService {
       StreamController<User?>.broadcast();
   Stream<User?> get userStream => _userStreamController.stream;
 
+  // Email verification bypass 
+  bool _debugSkipEmailVerification = true;
+
+
+  bool get debugSkipEmailVerification => _debugSkipEmailVerification;
+  set debugSkipEmailVerification(bool value) => _debugSkipEmailVerification = value;
+
   // Password validation checker
   bool isPasswordValid(String password) {
     // Check if password is at least 8 characters long and has at least one uppercase letter
@@ -85,6 +92,11 @@ class AuthService {
   
   /// Check if the current user's email is verified
   Future<bool> isEmailVerified() async {
+    // Skip verification check if debug mode is enabled
+    if (_debugSkipEmailVerification) {
+      return true;
+    }
+    
     final firebaseUser = _firebaseAuth.currentUser;
     if (firebaseUser != null) {
       await firebaseUser.reload();
@@ -237,8 +249,8 @@ class AuthService {
         password: password,
       );
       
-      // Check if email is verified
-      if (requireVerification && !userCredential.user!.emailVerified) {
+      // Check if email is verified, unless we're in debug mode
+      if (requireVerification && !_debugSkipEmailVerification && !userCredential.user!.emailVerified) {
         // Send another verification email if needed
         await userCredential.user!.sendEmailVerification();
         throw Exception('Email not verified. Please check your inbox for a verification link.');
@@ -252,7 +264,8 @@ class AuthService {
 
       if (userDoc.exists) {
         Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
-   print(userData['role']);
+        print(userData['role']);
+        
         // Create the appropriate user object based on role
         if (userData['role'] == "healthcareProfessional") {
           final hp = HealthcareProfessional.fromJson(userData);
@@ -496,6 +509,33 @@ class AuthService {
     } catch (e) {
       print('Error getting current user data: $e');
       throw Exception('Error retrieving user data');
+    }
+  }
+
+  /// Sends a password reset email to the specified email address
+  ///
+  /// Returns true if the reset email was sent successfully
+  Future<bool> sendPasswordResetEmail({required String email}) async {
+    try {
+      // Make sure email is valid
+      if (email.isEmpty || !email.contains('@')) {
+        throw Exception('Veuillez fournir une adresse email valide.');
+      }
+      
+      // Send reset email
+      await _firebaseAuth.sendPasswordResetEmail(email: email);
+      print('Password reset email sent to $email');
+      return true;
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      print('Error sending password reset email: ${e.code}');
+      if (e.code == 'user-not-found') {
+        throw Exception('Aucun utilisateur trouvé avec cette adresse email.');
+      } else {
+        throw Exception('Erreur lors de l\'envoi de l\'email de réinitialisation: ${e.message}');
+      }
+    } catch (e) {
+      print('An unexpected error occurred: $e');
+      throw Exception('Une erreur inattendue s\'est produite.');
     }
   }
 
