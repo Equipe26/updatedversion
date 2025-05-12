@@ -28,7 +28,7 @@ class AuthService {
       StreamController<User?>.broadcast();
   Stream<User?> get userStream => _userStreamController.stream;
 
-  // Email verification bypass 
+  // Email verification bypass
   bool _debugSkipEmailVerification = true;
 
 
@@ -167,6 +167,8 @@ class AuthService {
 
       // Save to Firestore
       await _firestore.collection('users').doc(uid).set(hp.toJson());
+      // Save to hp collection
+      await _firestore.collection('healthcareProfessional').doc(uid).set(hp.toJson());
 
       _currentUser = hp;
       _userStreamController.add(_currentUser);
@@ -222,6 +224,9 @@ class AuthService {
 
       // Save to Firestore
       await _firestore.collection('users').doc(uid).set(patient.toJson());
+
+      await _firestore.collection('patients').doc(uid).set(patient.toJson());
+      // Save to patients collection
 
       _currentUser = patient;
       _userStreamController.add(_currentUser);
