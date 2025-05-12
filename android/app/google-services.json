@@ -1,0 +1,87 @@
+{
+  "project_info": {
+    "project_number": "726493416572",
+    "firebase_url": "https://chifaa-40a7c-default-rtdb.firebaseio.com",
+    "project_id": "chifaa-40a7c",
+    "storage_bucket": "chifaa-40a7c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:726493416572:android:f3c96d06fb2ff5f1e8cdf9",
+        "android_client_info": {
+          "package_name": "com.example.chifaa"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDdy-dDRwd2dBKBbotor3AieXxlpKtU4iA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:726493416572:android:922894c18b5e110de8cdf9",
+        "android_client_info": {
+          "package_name": "com.example.db_test"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDdy-dDRwd2dBKBbotor3AieXxlpKtU4iA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:726493416572:android:92cae190b12719ade8cdf9",
+        "android_client_info": {
+          "package_name": "com.example.finalapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDdy-dDRwd2dBKBbotor3AieXxlpKtU4iA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:726493416572:android:3e90ce93f39aef95e8cdf9",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_ms"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDdy-dDRwd2dBKBbotor3AieXxlpKtU4iA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

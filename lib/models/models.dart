@@ -1,0 +1,12 @@
+import 'Appointment.dart';
+import 'Comment.dart';
+import 'Connection.dart';
+import 'Conversation.dart';
+import 'HealthcareProfessional.dart';
+import 'MedicalDocument.dart';
+import 'MedicalFolder.dart';
+import 'Message.dart';
+import 'Patient.dart';
+import 'Rating.dart';
+import 'Service.dart';
+import 'User.dart';

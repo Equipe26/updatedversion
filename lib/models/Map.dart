@@ -1,0 +1,73 @@
+// Algerian administrative divisions enumerations
+// Contains all 58 wilayas and all communes of Algiers
+
+enum AlgerianWilayas {
+  adrar,
+  chlef,
+  laghouat,
+  oumElBouaghi,
+  batna,
+  bejaia,
+  biskra,
+  bechar,
+  blida,
+  bouira,
+  tamanrasset,
+  tebessa,
+  tlemcen,
+  tiaret,
+  tiziOuzou,
+  alger,
+  djelfa,
+  jijel,
+  setif,
+  saida,
+  skikda,
+  sidiBelAbbes,
+  annaba,
+  guelma,
+  constantine,
+  medea,
+  mostaganem,
+  msila,
+  mascara,
+  ouargla,
+  oran,
+  elBayadh,
+  illizi,
+  bordjBouArreridj,
+  boumerdes,
+  elTarf,
+  tindouf,
+  tissemsilt,
+  elOued,
+  khenchela,
+  soukAhras,
+  tipaza,
+  mila,
+  ainDefla,
+  naama,
+  ainTemouchent,
+  ghardaia,
+  relizane,
+  timimoun,
+  bordjBadjiMokhtar,
+  ouledDjellal,
+  beniAbbes,
+  inSalah,
+  inGuezzam,
+  touggourt,
+  djanet,
+  elMghair,
+  elMenia;
+
+  
+}
+
+enum AlgiersCommunes {
+  ouedSmar,
+  babEzzouar,
+  darElBeida,
+  husseinDey
+}
+
