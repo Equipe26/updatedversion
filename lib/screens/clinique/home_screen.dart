@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_2/login/paccueil2.dart';
 import '../common/notifications_screen.dart';
 import '../common/messages/messages_screen.dart';
 import '../common/temp_clinic_profile.dart';
@@ -7,6 +8,12 @@ import 'file_screen.dart';
 import 'rendez_vous.dart';
 import '../../models/HealthcareProfessional.dart';
 
+import '../../models/HealthcareProfessionalservice.dart';
+import '../../models/AppointementService.dart';
+import '../../models/Appointment.dart';
+import '../../models/Comment.dart';
+import '../../models/Comment_service.dart';
+import 'package:intl/intl.dart';
 class ClinicHomeScreen extends StatefulWidget {
   final HealthcareProfessional user;
   ClinicHomeScreen({Key? key, required this.user}) : super(key: key);
@@ -16,10 +23,56 @@ class ClinicHomeScreen extends StatefulWidget {
 
 class _ClinicHomeScreenState extends State<ClinicHomeScreen> {
   int _selectedIndex = 0;
+  late HealthcareProfessional? _healthcareProfessional;
+  late Future<List<Appointment>> _upcomingAppointments;
+  late Future<List<Comment>> _recentComments;
+  bool _isLoading = true;
   static const Color myDarkBlue = Color(0xFF073057);
   static const Color myBlue2 = Color(0xFF396C9B);
   static const Color myLightBlue = Color(0xFFA3C3E4);
   int _currentIndex = 0;
+  final HealthcareProfessionalService _hpService =
+      HealthcareProfessionalService();
+  final AppointmentService _appointmentService = AppointmentService();
+  final CommentService _commentService = CommentService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+
+    try {
+      // Charger les données du professionnel de santé
+      _healthcareProfessional = await _hpService.get(widget.user.id);
+
+      // Charger les rendez-vous à venir
+      _upcomingAppointments = _appointmentService
+          .queryField('healthcareProfessionalId', widget.user.id)
+          .then((appointments) {
+        final now = DateTime.now();
+        return appointments.where((appt) {
+          return appt.date.isAfter(now) &&
+              appt.status == AppointmentStatus.scheduled;
+        }).toList()
+          ..sort((a, b) => a.date.compareTo(b.date));
+      });
+
+      // Charger les commentaires récents
+      _recentComments = _commentService
+          .getCommentsForProfessional(widget.user.id)
+          .then((comments) {
+        return comments..sort((a, b) => b.date.compareTo(a.date));
+      });
+    } catch (e) {
+      print('Error loading data: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
 
   final List<Map<String, String>> doctors = [
     {
@@ -71,6 +124,9 @@ class _ClinicHomeScreenState extends State<ClinicHomeScreen> {
         return Serviceclinique();
       case 2:
         return RendezVousclinic();
+        return RendezVousScreen( 
+       healthcareProfessionalId: widget.user.id,
+        );
       case 3:
         return Files_clinique();
       default:
@@ -273,6 +329,139 @@ class _ClinicHomeScreenState extends State<ClinicHomeScreen> {
     );
   }
 
+ Widget _buildPatientReviewsSection() {
+    return FutureBuilder<List<Comment>>(
+      future: _recentComments,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+        
+        if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+          return Container(
+            decoration: BoxDecoration(
+              color: myLightBlue,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              "Aucun avis pour le moment",
+              style: TextStyle(color: myDarkBlue),
+            ),
+          );
+        }
+        
+        final comments = snapshot.data!.take(2).toList();
+        
+        return Container(
+          decoration: BoxDecoration(
+            color: myLightBlue,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "📢 Derniers avis",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: myDarkBlue,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {},
+                    child: Text(
+                      "Voir tous",
+                      style: TextStyle(color: myDarkBlue),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              ...comments.map((comment) => _buildReviewItem(
+                comment.patientName,
+                comment.comment,
+                _formatDate(comment.date),
+                _calculateRating(comment.comment), // Vous devrez implémenter cette logique
+              )).toList(),
+            ],
+          ),
+        );
+      },
+    );
+  }
+   String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+    
+    if (difference.inDays == 0) return "Aujourd'hui";
+    if (difference.inDays == 1) return "Hier";
+    if (difference.inDays < 7) return "Il y a ${difference.inDays} jours";
+    
+    return DateFormat('dd/MM/yyyy').format(date);
+  }
+
+  int _calculateRating(String comment) {
+    // Logique simple pour déterminer une note basée sur le commentaire
+    // Vous devriez remplacer cela par la vraie note si disponible
+    if (comment.toLowerCase().contains('excellent')) return 5;
+    if (comment.toLowerCase().contains('très bien')) return 4;
+    if (comment.toLowerCase().contains('bien')) return 3;
+    if (comment.toLowerCase().contains('moyen')) return 2;
+    return 1;
+  }
+
+
+  Widget _buildReviewItem(
+    String name, String review, String time, int stars) { // <-- Change DateTime to String
+  return Container(
+    margin: const EdgeInsets.symmetric(vertical: 8),
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: Row(
+      children: [
+        CircleAvatar(
+          backgroundColor: myBlue2,
+          child: Text(name[0], style: TextStyle(color: Colors.white)),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(name,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: myDarkBlue)),
+              Row(
+                children: [
+                  ...List.generate(
+                      5,
+                      (index) => Icon(
+                            Icons.star,
+                            color: index < stars ? Colors.amber : Colors.grey,
+                            size: 16,
+                          )),
+                  const SizedBox(width: 8),
+                  Text("$time",
+                      style: TextStyle(color: Colors.grey, fontSize: 12)),
+                ],
+              ),
+              Text(review, style: TextStyle(color: myDarkBlue)),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
   Widget _buildWorkScheduleSection(double screenWidth) {
     final currentDoctor = doctors[_currentIndex];
 

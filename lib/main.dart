@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_application_2/models/MedicalDocumentService.dart';
+
 import 'firebase_options.dart';
 import 'login/paccueil2.dart';
 import 'screens/medecin/home_screen.dart';
@@ -19,14 +20,30 @@ import 'models/MessagingService.dart';
 import 'models/ConnectionService.dart';
 import 'models/Notification_service.dart'; // Add this import
 import 'providers/NotificationProvider.dart'; // Add this import
+
+
+import 'package:intl/date_symbol_data_local.dart';
+import 'models/MedicalDocumentService.dart';
+
+>>>>>>> cecfbbe (commit)
 void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
     await Supabase.initialize(
     url: "https://djroiqetexvueyexaeav.supabase.co",
     anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRqcm9pcWV0ZXh2dWV5ZXhhZWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUwNzQyOTksImV4cCI6MjA2MDY1MDI5OX0.1PkNLCTrlTsRems-x43k9EyKhH8Jvihz_uNXVVnrzho",
   );
+
+  await Supabase.initialize(
+    url: "https://djroiqetexvueyexaeav.supabase.co",
+    anonKey:
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRqcm9pcWV0ZXh2dWV5ZXhhZWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUwNzQyOTksImV4cCI6MjA2MDY1MDI5OX0.1PkNLCTrlTsRems-x43k9EyKhH8Jvihz_uNXVVnrzho",
+  );
+  WidgetsFlutterBinding.ensureInitialized(); // Ensures Flutter is ready
+  await initializeDateFormatting('fr_FR', null);
+>>>>>>> cecfbbe (commit)
   final backendMessagingService = MessagingService();
   final connectionService = ConnectionService();
   final notificationService = NotificationService();
@@ -44,7 +61,12 @@ void main() async {
           create: (context) => NotificationProvider(notificationService),
         ),
         Provider<MessagingService>(create: (_) => MessagingService()),
+
     Provider<MedicalDocumentService>(create: (_) => MedicalDocumentService()),
+
+        Provider<MedicalDocumentService>(
+            create: (_) => MedicalDocumentService()),
+
       ],
       child: MyApp(),
     ),

@@ -75,9 +75,8 @@ class HealthcareProfessional extends User {
       if (availableSpecialties.isEmpty) {
         throw ArgumentError('Clinics must have at least one specialty');
       }
-      if (staffIds == null || staffIds!.isEmpty) {
-        throw ArgumentError('Clinics must have staff doctors');
-      }
+     
+    
     }
 
     if ((type == HealthcareType.medecin || type == HealthcareType.dentiste) &&

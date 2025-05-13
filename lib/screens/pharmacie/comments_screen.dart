@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+/*import 'package:flutter/material.dart';
 
 class CommentsScreen extends StatelessWidget {
   static const Color myDarkBlue = Color(0xFF073057);
@@ -167,6 +168,145 @@ class CommentsScreen extends StatelessWidget {
                   style: TextStyle(color: myBlue2),
                 ),
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+}*/
+import 'package:flutter/material.dart';
+import '../../models/Comment.dart';
+import '../../models/Comment_service.dart';
+
+
+class CommentsScreen extends StatefulWidget {
+  final String professionalId;
+
+  CommentsScreen({required this.professionalId});
+
+  @override
+  _CommentsScreenState createState() => _CommentsScreenState();
+}
+
+class _CommentsScreenState extends State<CommentsScreen> {
+  static const Color myDarkBlue = Color(0xFF073057);
+  static const Color myBlue2 = Color(0xFF396C9B);
+  static const Color myLightBlue = Color(0xFFA3C3E4);
+
+  final CommentService _commentService = CommentService();
+  late Future<List<Comment>> _recentComments;
+
+  @override
+  void initState() {
+    super.initState();
+    _recentComments = _commentService.getCommentsForProfessional(widget.professionalId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.blue[100],
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: myDarkBlue),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Tous les avis',
+          style: TextStyle(
+            color: myDarkBlue,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: FutureBuilder<List<Comment>>(
+        future: _recentComments,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Erreur: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(child: Text('Aucun avis trouvé.'));
+          }
+
+          final comments = snapshot.data!;
+          return ListView.builder(
+            padding: EdgeInsets.all(16),
+            itemCount: comments.length,
+            itemBuilder: (context, index) {
+              return _buildCommentItem(comments[index]);
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildCommentItem(Comment comment) {
+    return Card(
+      margin: EdgeInsets.only(bottom: 16),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: myLightBlue, width: 1),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: myBlue2,
+                  child: Text(
+                    comment.patientName[0], // First letter as avatar
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        comment.patientName,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: myDarkBlue,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Icon(Icons.calendar_today, size: 12, color: Colors.grey),
+                          SizedBox(width: 4),
+                          Text(
+                            comment.date.toString().split(' ')[0], // Just the date
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12),
+            Text(
+              comment.comment,
+              style: TextStyle(
+                color: myDarkBlue,
+              ),
             ),
           ],
         ),
