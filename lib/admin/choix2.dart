@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'nvservice.dart';
+
 void main() {
   runApp(MyApp());
 }
@@ -55,12 +55,7 @@ class Choix2State extends State<Choix2> {
                       width: 200,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: () {
-                            Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => DashboardScreen()),
-                  );
-                        }, // Disable if no selection
+                        onPressed: () {}, // Disable if no selection
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Color(0xFF396C9B), // Button color
 

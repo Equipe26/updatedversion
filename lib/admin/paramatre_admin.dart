@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_2/admin/politique_admin.dart';
-import 'chmdp_admin.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -162,136 +161,57 @@ class par1 extends StatelessWidget {
     double screenHeight = MediaQuery.of(context).size.height;
 
     return SafeArea(
-      child: Scaffold(
-          backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFA3C3E4),
-        elevation: 0,
-        title: Center(
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Icon(Icons.settings, color: Color(0xFF073057)),
-              SizedBox(width: 10),
-              Text(
-                'Parametre generale',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                  color: Color(0xFF073057),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Column(
+          children: [
+            Expanded(
+              child: Align(
+                alignment: Alignment.center,
+                child: Container(
+                  width: double.infinity,
+                  height: screenHeight * 0.8,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFA3C3E4),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        "Parametres",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF000000),
+                        ),
+                      ),
 
-          body: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Column(
-            children: [
-              Expanded(
-                child: Align(
-                  alignment: Alignment.center,
-                  child: Container(
-                    width: double.infinity,
-                    height: screenHeight * 0.8,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFA3C3E4),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          "Parametres",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF000000),
-                          ),
-                        ),
-                        const SizedBox(height: 95),
-                       _buildProfileOption(
-                          context,
-                          Icons.lightbulb,
-                          'Paramétres de notification',
-                          () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => const paramatre_admin()),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 35),
-                       _buildProfileOption(
-                          context,
-                          Icons.key,
-                          'Gestionnaire De mot De Passe',
-                          () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => chmdp_admin()),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 35),
-                        _buildProfileOption(
-                          context,
-                          Icons.lock,
-                          'Politique de confidentialité',
-                          () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => const PrivacyPolicyScreenAdmin()),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 35),
-                      _buildProfileOption1(
-                          Icons.person,
-                          'Supprimer le Compte',
-                         
-                        ),
-                      ],
-                    ),
+                      const SizedBox(height: 95),
+
+                      _buildProfileOption(
+                        Icons.lightbulb,
+                        'Paramétres de notification',
+                      ),
+                      const SizedBox(height: 35),
+                      _buildProfileOption(
+                        Icons.key,
+                        'Gestionnaire De mot De Passe',
+                      ),
+                      const SizedBox(height: 35),
+                      _buildProfileOption(Icons.person, 'Supprimer le Compte'),
+                    ],
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildProfileOption(
-    BuildContext context,
-    IconData icon,
-    String text,
-    VoidCallback onTap,
-  ) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Row(
-        children: [
-          Icon(icon, color: const Color(0xFF073057), size: 28),
-          const SizedBox(width: 15),
-          Text(
-            text,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF000000),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-Widget _buildProfileOption1(IconData icon, String text) {
+  Widget _buildProfileOption(IconData icon, String text) {
     return Row(
       children: [
         Icon(icon, color: const Color(0xFF073057), size: 28),

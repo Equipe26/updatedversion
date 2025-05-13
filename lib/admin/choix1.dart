@@ -1,15 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_2/login/gastro.dart';
 import 'package:flutter_application_2/login/inscription2.dart';
-import 'package:flutter_application_2/login/ophto.dart';
-import 'card.dart';
-import 'derma.dart';
-import 'gastro.dart';
-import 'gene.dart';
-import 'gyne.dart';
-import 'orl.dart';
-import 'ophto.dart';
-import 'pedia.dart';
+
 import '../yyu.dart';
 
 void main() {
@@ -97,21 +88,16 @@ class Choix extends StatelessWidget {
                   bottomRight: Radius.circular(40),
                 ),
               ),
+
               child: Column(
                 children: [
                   SizedBox(height: 50),
+
                   SizedBox(
                     width: 300, // Set the width
                     height: 50, // Set the height
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => Gene(),
-                          ),
-                        );
-                      },
+                      onPressed: () {},
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xFF396C9B), // Button color
                         foregroundColor: Colors.white, // Text color
@@ -165,14 +151,7 @@ class Choix extends StatelessWidget {
                     width: 300, // Set the width
                     height: 50, // Set the height
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => Gyne(),
-                          ),
-                        );
-                      },
+                      onPressed: () {},
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xFF396C9B), // Button color
                         foregroundColor: Colors.white, // Text color
@@ -226,14 +205,7 @@ class Choix extends StatelessWidget {
                     width: 300, // Set the width
                     height: 50, // Set the height
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => Derma(),
-                          ),
-                        );
-                      },
+                      onPressed: () {},
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xFF396C9B), // Button color
                         foregroundColor: Colors.white, // Text color
@@ -263,14 +235,7 @@ class Choix extends StatelessWidget {
                     width: 300, // Set the width
                     height: 50, // Set the height
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => Orl(),
-                          ),
-                        );
-                      },
+                      onPressed: () {},
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xFF396C9B), // Button color
                         foregroundColor: Colors.white, // Text color
@@ -300,14 +265,7 @@ class Choix extends StatelessWidget {
                     width: 300, // Set the width
                     height: 50, // Set the height
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => Gastro(),
-                          ),
-                        );
-                      },
+                      onPressed: () {},
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xFF396C9B), // Button color
                         foregroundColor: Colors.white, // Text color
@@ -337,14 +295,7 @@ class Choix extends StatelessWidget {
                     width: 300, // Set the width
                     height: 50, // Set the height
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => Card1(),
-                          ),
-                        );
-                      },
+                      onPressed: () {},
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xFF396C9B), // Button color
                         foregroundColor: Colors.white, // Text color
@@ -375,12 +326,6 @@ class Choix extends StatelessWidget {
                     height: 50, // Set the height
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => pedia(),
-                          ),
-                        );
                         // Navigator.push(
                         //   context,
                         // MaterialPageRoute(builder: (context) => ()),
@@ -416,12 +361,6 @@ class Choix extends StatelessWidget {
                     height: 50, // Set the height
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => Ophto(),
-                          ),
-                        );
                         // Navigator.push(
                         //   context,
                         // MaterialPageRoute(builder: (context) => ()),
@@ -452,7 +391,16 @@ class Choix extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: 20),
-                
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      _buildCircleIconButton1(
+                        icon: Icons.keyboard_arrow_down,
+                        onTap: () {},
+                        text: "ajouter", // Specify the parameter name 'text'
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
