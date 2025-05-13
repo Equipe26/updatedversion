@@ -55,43 +55,69 @@ class MessagingService {
     }
   }
 
-  Stream<List<Conversation>> getUserConversations(String userId) {
-    try {
-      return _connectionDb.collectionRef
-          .where('patientId', isEqualTo: userId)
-          .snapshots()
-          .asyncExpand((patientConnections) async* {
-            final professionalConnections = await _connectionDb.collectionRef
-                .where('healthcareProfessionalId', isEqualTo: userId)
-                .get();
+Stream<List<Conversation>> getUserConversations(String userId) {
+  try {
+    debugPrint('Getting conversations for user: $userId');
+    
+    return _connectionDb.collectionRef
+        .where('patientId', isEqualTo: userId)
+        .snapshots()
+        .asyncExpand((patientConnections) async* {
+          debugPrint('Found ${patientConnections.docs.length} patient connections');
+          
+          final professionalConnections = await _connectionDb.collectionRef
+              .where('healthcareProfessionalId', isEqualTo: userId)
+              .get();
 
-            final allConnectionIds = [
-              ...patientConnections.docs.map((doc) => doc.id),
-              ...professionalConnections.docs.map((doc) => doc.id),
-            ];
+          debugPrint('Found ${professionalConnections.docs.length} professional connections');
 
-            if (allConnectionIds.isEmpty) {
-              yield [];
-              return;
-            }
+          final allConnectionIds = [
+            ...patientConnections.docs.map((doc) => doc.id),
+            ...professionalConnections.docs.map((doc) => doc.id),
+          ];
 
-            yield* _conversationDb.collectionRef
-                .where('connectionId', whereIn: allConnectionIds)
-                .snapshots()
-                .map((snapshot) {
-                  final conversations = snapshot.docs
-                      .map((doc) => doc.data())
-                      .whereType<Conversation>()
-                      .toList();
-                  conversations.sort((a, b) => b.lastMessageTimestamp.compareTo(a.lastMessageTimestamp));
-                  return conversations;
-                });
-          });
-    } catch (e) {
-      debugPrint('Error getting user conversations: $e');
-      return Stream.error(e);
-    }
+          debugPrint('Total connection IDs: ${allConnectionIds.length}');
+
+          if (allConnectionIds.isEmpty) {
+            debugPrint('No connections found for user');
+            yield [];
+            return;
+          }
+
+          yield* _conversationDb.collectionRef
+              .where('connectionId', whereIn: allConnectionIds)
+              .snapshots()
+              .map((snapshot) {
+                debugPrint('Found ${snapshot.docs.length} conversations');
+                
+                final conversations = snapshot.docs
+                    .map((doc) {
+                      try {
+                        final data = doc.data();
+                        if (data == null) {
+                          debugPrint('Null data for conversation doc ${doc.id}');
+                          return null;
+                        }
+                        return data;
+                      } catch (e) {
+                        debugPrint('Error parsing conversation ${doc.id}: $e');
+                        return null;
+                      }
+                    })
+                    .whereType<Conversation>()
+                    .toList();
+                
+                debugPrint('Valid conversations: ${conversations.length}');
+                conversations.sort((a, b) => b.lastMessageTimestamp.compareTo(a.lastMessageTimestamp));
+                return conversations;
+              });
+        });
+  } catch (e, stackTrace) {
+    debugPrint('Error in getUserConversations: $e');
+    debugPrint('Stack trace: $stackTrace');
+    return Stream.error(e);
   }
+}
 
   Future<Conversation?> _getConversation(String conversationId) async {
     try {
@@ -103,98 +129,105 @@ class MessagingService {
   }
 
   // Message management
-  Future<void> sendMessage({
-    required String connectionId,
-    required String conversationId,
-    required String senderId,
-    required String recipientId,
-    required String content,
-    List<String>? attachmentIds,
-    bool sendNotification = true,
-  }) async {
-    debugPrint('[MessagingService] Starting sendMessage process');
-    debugPrint('[MessagingService] Parameters:');
-    debugPrint('  - connectionId: $connectionId');
-    debugPrint('  - conversationId: $conversationId');
-    debugPrint('  - senderId: $senderId');
-    debugPrint('  - recipientId: $recipientId');
-    debugPrint('  - content: ${content.length > 50 ? content.substring(0, 50) + "..." : content}');
-    debugPrint('  - hasAttachments: ${attachmentIds?.isNotEmpty ?? false}');
+Future<void> sendMessage({
+  required String connectionId,
+  required String conversationId,
+  required String senderId,
+  required String recipientId,
+  required String content,
+  List<String>? attachmentIds,
+  bool sendNotification = true,
+}) async {
+  debugPrint('[MessagingService] Starting sendMessage process');
+  debugPrint('[MessagingService] Parameters:');
+  debugPrint('  - connectionId: $connectionId');
+  debugPrint('  - conversationId: $conversationId');
+  debugPrint('  - senderId: $senderId');
+  debugPrint('  - recipientId: $recipientId');
+  debugPrint('  - content: ${content.length > 50 ? content.substring(0, 50) + "..." : content}');
+  debugPrint('  - hasAttachments: ${attachmentIds?.isNotEmpty ?? false}');
 
-    try {
-      // 1. Get or create conversation
-      Conversation conversation;
-      final existingConv = await _getConversation(conversationId);
-      
-      if (existingConv == null) {
-        debugPrint('[MessagingService] Conversation not found, creating new one...');
-        conversation = Conversation(
-          id: conversationId,
-          connectionId: connectionId,
-          messageIds: [],
-          lastMessageTimestamp: DateTime.now(),
-        );
-        await _conversationDb.add(data: conversation, id: conversation.id);
-        debugPrint('[MessagingService] New conversation created with ID: ${conversation.id}');
-      } else {
-        conversation = existingConv;
-        debugPrint('[MessagingService] Found conversation: ${conversation.id}');
-      }
-
-      // 2. Create and save message
-      debugPrint('[MessagingService] Creating message...');
-      final messageId = _messageDb.collectionRef.doc().id;
-      debugPrint('[MessagingService] Generated message ID: $messageId');
-      
-      final message = Message(
-        id: messageId,
-        conversationId: conversationId,
-        senderId: senderId,
-        content: content,
-        timestamp: DateTime.now(),
-        isRead: false,
-        attachmentIds: attachmentIds ?? [],
+  try {
+    // 1. Get or create conversation
+    Conversation conversation;
+    final existingConv = await _getConversation(conversationId);
+    
+    if (existingConv == null) {
+      debugPrint('[MessagingService] Conversation not found, creating new one...');
+      conversation = Conversation(
+        id: conversationId,
+        connectionId: connectionId,
+        messageIds: [],
+        lastMessageTimestamp: DateTime.now(),
       );
-
-      debugPrint('[MessagingService] Saving message to database...');
-      await _messageDb.add(data: message, id: messageId);
-      debugPrint('[MessagingService] Message saved successfully');
-
-      // 3. Update conversation
-      debugPrint('[MessagingService] Updating conversation...');
-      final updatedMessageIds = [...conversation.messageIds, messageId];
-      debugPrint('[MessagingService] Updated message IDs: ${updatedMessageIds.length} total');
-      
-      await _conversationDb.update(
-        conversationId,
-        conversation.copyWith(
-          messageIds: updatedMessageIds,
-          lastMessageTimestamp: DateTime.now(),
-        ),
-        (c) => c.toJson(),
-      );
-      debugPrint('[MessagingService] Conversation updated successfully');
-
-      // 4. Send notification if needed
-      if (sendNotification) {
-        debugPrint('[MessagingService] Preparing to send notification...');
-        await _sendNewMessageNotification(
-          recipientId: recipientId,
-          content: content,
-          conversationId: conversationId,
-          messageId: messageId,
-          senderId: senderId,
-        );
-        debugPrint('[MessagingService] Notification sent');
-      }
-
-      debugPrint('[MessagingService] Message process completed successfully');
-    } catch (e, stack) {
-      debugPrint('[MessagingService] ERROR in sendMessage: $e');
-      debugPrint('[MessagingService] Stack trace: $stack');
-      rethrow;
+      await _conversationDb.add(data: conversation, id: conversation.id);
+      debugPrint('[MessagingService] New conversation created with ID: ${conversation.id}');
+    } else {
+      conversation = existingConv;
+      debugPrint('[MessagingService] Found conversation: ${conversation.id}');
     }
+
+    // 2. Create and save message
+    debugPrint('[MessagingService] Creating message...');
+    // Utiliser un ID plus simple et prédictible
+    final timestamp = DateTime.now();
+    final messageId = 'msg_${senderId}_${timestamp.millisecondsSinceEpoch}';
+    debugPrint('[MessagingService] Generated message ID: $messageId');
+    
+    final message = Message(
+      id: messageId,
+      conversationId: conversationId,
+      senderId: senderId,
+      content: content,
+      timestamp: timestamp,
+      isRead: false,
+      attachmentIds: attachmentIds ?? [],
+    );
+
+    debugPrint('[MessagingService] Saving message to database...');
+    
+    // Créer un Map pour vérifier les données exactes envoyées à Firestore
+    final messageJson = message.toJson();
+    debugPrint('[MessagingService] Message JSON: $messageJson');
+    
+    await _messageDb.add(data: message, id: messageId);
+    debugPrint('[MessagingService] Message saved successfully');
+
+    // 3. Update conversation
+    debugPrint('[MessagingService] Updating conversation...');
+    final updatedMessageIds = [...conversation.messageIds, messageId];
+    debugPrint('[MessagingService] Updated message IDs: ${updatedMessageIds.length} total');
+    
+    await _conversationDb.update(
+      conversationId,
+      conversation.copyWith(
+        messageIds: updatedMessageIds,
+        lastMessageTimestamp: timestamp,
+      ),
+      (c) => c.toJson(),
+    );
+    debugPrint('[MessagingService] Conversation updated successfully');
+
+    // 4. Send notification if needed
+    if (sendNotification) {
+      debugPrint('[MessagingService] Preparing to send notification...');
+      await _sendNewMessageNotification(
+        recipientId: recipientId,
+        content: content,
+        conversationId: conversationId,
+        messageId: messageId,
+        senderId: senderId,
+      );
+      debugPrint('[MessagingService] Notification sent');
+    }
+
+    debugPrint('[MessagingService] Message process completed successfully');
+  } catch (e, stack) {
+    debugPrint('[MessagingService] ERROR in sendMessage: $e');
+    debugPrint('[MessagingService] Stack trace: $stack');
+    rethrow;
   }
+}
 
   Future<void> _sendNewMessageNotification({
     required String recipientId,
@@ -233,28 +266,44 @@ class MessagingService {
   }
 
   Stream<List<Message>> getMessages(String conversationId) {
-    try {
-      return _conversationDb.collectionRef
-          .doc(conversationId)
-          .snapshots()
-          .asyncMap((conversationDoc) async {
-            final conversation = conversationDoc.data();
-            if (conversation == null) return [];
-
-            final messages = await Future.wait(
-              conversation.messageIds.map((id) => _messageDb.get(id)),
-            );
+  try {
+    debugPrint('[MessagingService] Starting getMessages for conversationId: $conversationId');
+    
+    // Approche alternative: Récupérer les messages directement de la collection "messages"
+    return _messageDb.collectionRef
+        .where('conversationId', isEqualTo: conversationId)
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snapshot) {
+          if (snapshot.docs.isEmpty) {
+            debugPrint('[MessagingService] No messages found for conversation $conversationId');
+            return <Message>[];
+          }
+          
+          final messages = snapshot.docs.map((doc) {
+            final data = doc.data();
+            if (data == null) {
+              debugPrint('[MessagingService] Document ${doc.id} has no data');
+              return null;
+            }
             
-            return messages
-                .whereType<Message>()
-                .toList()
-                ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
-          });
-    } catch (e) {
-      debugPrint('Error getting messages: $e');
-      return Stream.error(e);
-    }
+            try {
+              return data;
+            } catch (e) {
+              debugPrint('[MessagingService] Error parsing message ${doc.id}: $e');
+              return null;
+            }
+          }).whereType<Message>().toList();
+          
+          debugPrint('[MessagingService] Retrieved ${messages.length} messages directly from messages collection');
+          return messages;
+        });
+  } catch (e, stackTrace) {
+    debugPrint('[MessagingService] Error getting messages: $e');
+    debugPrint('[MessagingService] Stack trace: $stackTrace');
+    return Stream.error(e);
   }
+}
 
   Future<String> getOrCreateConnection(String user1Id, String user2Id) async {
     // Sort IDs to avoid duplicates
@@ -348,4 +397,6 @@ class MessagingService {
           return 0;
         });
   }
+
+  
 }

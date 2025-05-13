@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_application_2/models/MedicalDocumentService.dart';
 import 'firebase_options.dart';
 import 'login/paccueil2.dart';
 import 'screens/medecin/home_screen.dart';
@@ -42,6 +43,8 @@ void main() async {
         ChangeNotifierProvider(
           create: (context) => NotificationProvider(notificationService),
         ),
+        Provider<MessagingService>(create: (_) => MessagingService()),
+    Provider<MedicalDocumentService>(create: (_) => MedicalDocumentService()),
       ],
       child: MyApp(),
     ),

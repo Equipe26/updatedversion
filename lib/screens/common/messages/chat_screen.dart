@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_2/models/Message.dart';
@@ -5,32 +6,34 @@ import 'package:provider/provider.dart';
 import 'package:flutter_application_2/models/MessagingService.dart';
 
 class ChatScreen extends StatefulWidget {
-   final String connectionId;
-  final String conversationId;
   final Map<String, dynamic> otherParticipant;
+  final String conversationId;
+  final String connectionId;
 
   const ChatScreen({
-    super.key,
-     required this.connectionId,
-    required this.conversationId,
+    Key? key,
     required this.otherParticipant,
-  });
+    required this.conversationId,
+    required this.connectionId,
+  }) : super(key: key);
 
   @override
-  State<ChatScreen> createState() => _ChatScreenState();
+  _ChatScreenState createState() => _ChatScreenState();
 }
 
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   late String _currentUserId;
+  bool _isFirstBuild = true;
+  List<String> _attachmentIds = [];
+  bool _isUploading = false;
 
   @override
   void initState() {
     super.initState();
     final currentUser = FirebaseAuth.instance.currentUser;
     _currentUserId = currentUser?.uid ?? '';
-    debugPrint('[INIT] Current user ID: $_currentUserId');
   }
 
   @override
@@ -40,27 +43,175 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  Widget _buildMessageBubble(Message message, bool isMe) {
+    return Container(
+      margin: EdgeInsets.only(
+        bottom: 8,
+        left: isMe ? 80 : 8,
+        right: isMe ? 8 : 80,
+      ),
+      child: Column(
+        crossAxisAlignment:
+            isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
+            decoration: BoxDecoration(
+              color: isMe ? const Color(0xFF1A73E8) : Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(16),
+                topRight: const Radius.circular(16),
+                bottomLeft: isMe ? const Radius.circular(16) : const Radius.circular(4),
+                bottomRight: isMe ? const Radius.circular(4) : const Radius.circular(16),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  message.content,
+                  style: TextStyle(
+                    color: isMe ? Colors.white : Colors.black87,
+                    fontSize: 16,
+                  ),
+                ),
+                if (message.attachmentIds.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  _buildAttachmentsPreview(message.attachmentIds, isMe),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _formatTime(message.timestamp),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                if (isMe) ...[
+                  const SizedBox(width: 4),
+                  Icon(
+                    message.isRead ? Icons.done_all : Icons.done,
+                    size: 14,
+                    color: message.isRead ? const Color.fromARGB(255, 42, 79, 109): Colors.grey,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttachmentsPreview(List<String> attachmentIds, bool isMe) {
+    return Column(
+      children: attachmentIds.map((id) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            color: isMe ? Colors.white.withOpacity(0.2) : Colors.grey[100],
+          ),
+          child: ListTile(
+            leading: const Icon(Icons.insert_drive_file),
+            title: Text(
+              'Attachment',
+              style: TextStyle(
+                color: isMe ? Colors.white : Colors.black87,
+              ),
+            ),
+            subtitle: Text(
+              'Tap to view',
+              style: TextStyle(
+                color: isMe ? Colors.white70 : Colors.grey[600],
+              ),
+            ),
+            onTap: () {
+              // TODO: Implement attachment viewing
+              debugPrint('View attachment: $id');
+            },
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildAttachmentIndicator() {
+    if (_attachmentIds.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.blue[50],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.attach_file, color:  const Color.fromARGB(255, 42, 79, 109), size: 20),
+          const SizedBox(width: 8),
+          Text(
+            '${_attachmentIds.length} attachment${_attachmentIds.length > 1 ? 's' : ''} ready',
+            style: const TextStyle(color:  const Color.fromARGB(255, 42, 79, 109)),
+          ),
+          const Spacer(),
+          IconButton(
+            icon: const Icon(Icons.close, color:  const Color.fromARGB(255, 42, 79, 109), size: 20),
+            onPressed: () {
+              setState(() {
+                _attachmentIds.clear();
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    debugPrint('[BUILD] Current user ID: $_currentUserId');
-    debugPrint('[BUILD] Other participant ID: ${widget.otherParticipant['id']}');
-    debugPrint('[BUILD] Conversation ID: ${widget.conversationId}');
-
     final messagingService = Provider.of<MessagingService>(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFE7ECFB),
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFA3C3E4),
-        elevation: 0,
+        backgroundColor: Colors.white,
+        elevation: 1,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF073057)),
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
         title: Row(
           children: [
             CircleAvatar(
-              radius: 16,
+              radius: 18,
               backgroundImage: widget.otherParticipant['image'] != null &&
                       widget.otherParticipant['image'].isNotEmpty
                   ? NetworkImage(widget.otherParticipant['image'])
@@ -71,14 +222,14 @@ class _ChatScreenState extends State<ChatScreen> {
                       widget.otherParticipant['name'].isNotEmpty
                           ? widget.otherParticipant['name'][0].toUpperCase()
                           : '?',
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     )
                   : null,
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -86,16 +237,17 @@ class _ChatScreenState extends State<ChatScreen> {
                   widget.otherParticipant['name'],
                   style: const TextStyle(
                     fontSize: 16,
-                    color: Color(0xFF073057),
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
                 if (widget.otherParticipant['specialty'] != null &&
                     widget.otherParticipant['specialty'].isNotEmpty)
                   Text(
                     widget.otherParticipant['specialty'],
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: Color(0xFF073057),
+                      color: Colors.grey[600],
                     ),
                   ),
               ],
@@ -105,150 +257,98 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Column(
         children: [
-         Expanded(
-  child: StreamBuilder<List<Message>>(
-    stream: messagingService.getMessages(widget.conversationId),
-    builder: (context, snapshot) {
-      debugPrint('[ChatScreen] StreamBuilder state:');
-      debugPrint('  - ConnectionState: ${snapshot.connectionState}');
-      debugPrint('  - HasError: ${snapshot.hasError}');
-      debugPrint('  - HasData: ${snapshot.hasData}');
-      
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        debugPrint('[ChatScreen] StreamBuilder waiting for data');
-        return const Center(child: CircularProgressIndicator());
-      }
+          Expanded(
+            child: StreamBuilder<List<Message>>(
+              stream: messagingService.getMessages(widget.conversationId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-      if (snapshot.hasError) {
-        debugPrint('[ChatScreen] Stream error: ${snapshot.error}');
-        debugPrint('[ChatScreen] Stack trace: ${snapshot.stackTrace}');
-        return Center(child: Text('Error: ${snapshot.error}'));
-      }
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
 
-      final messages = snapshot.data ?? [];
-      debugPrint('[ChatScreen] Received ${messages.length} messages');
-      
-      if (messages.isNotEmpty) {
-        debugPrint('[ChatScreen] First message: ${messages.first.id}');
-        debugPrint('[ChatScreen] Last message: ${messages.last.id}');
-      }
-      
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_scrollController.hasClients) {
-          _scrollController.jumpTo(
-            _scrollController.position.maxScrollExtent,
-          );
-        }
-      });
+                final messages = snapshot.data ?? [];
+                
+                if (messages.isNotEmpty && _isFirstBuild) {
+                  _isFirstBuild = false;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _scrollToBottom();
+                  });
+                }
 
-      return ListView.builder(
-        controller: _scrollController,
-        padding: const EdgeInsets.all(16),
-        reverse: true,
-        itemCount: messages.length,
-        itemBuilder: (context, index) {
-          final message = messages[index];
-          debugPrint('[MESSAGE] ID: ${message.id} Sender: ${message.senderId} Content: ${message.content}');
-          
-          final isMe = message.senderId == _currentUserId;
+                return ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.all(8),
+                  reverse: true,
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    final message = messages[index];
+                    final isMe = message.senderId == _currentUserId;
 
-          if (!isMe && !message.isRead) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              messagingService.markMessageAsRead(
-                messageId: message.id,
-                currentUserId: _currentUserId,
-              );
-            });
-          }
+                    if (!isMe && !message.isRead) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        messagingService.markMessageAsRead(
+                          messageId: message.id,
+                          currentUserId: _currentUserId,
+                        );
+                      });
+                    }
 
-          return Align(
-            alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 10,
-              ),
-              decoration: BoxDecoration(
-                color: isMe ? const Color(0xFFA3C3E4) : Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    message.content,
-                    style: TextStyle(
-                      color: isMe ? Colors.white : Colors.black,
+                    return _buildMessageBubble(message, isMe);
+                  },
+                );
+              },
+            ),
+          ),
+          Column(
+            children: [
+              if (_attachmentIds.isNotEmpty) _buildAttachmentIndicator(),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.attach_file, color:  const Color.fromARGB(255, 42, 79, 109)),
+                      onPressed: _isUploading ? null : () => _attachFile(context),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _formatTime(message.timestamp),
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: isMe
-                          ? Colors.white.withOpacity(0.8)
-                          : Colors.black54,
-                    ),
-                  ),
-                  if (message.attachmentIds.isNotEmpty)
-                    Column(
-                      children: [
-                        const SizedBox(height: 8),
-                        Text(
-                          '[${message.attachmentIds.length} attachment(s)]',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isMe
-                                ? Colors.white.withOpacity(0.8)
-                                : Colors.black54,
+                    Expanded(
+                      child: TextField(
+                        controller: _messageController,
+                        decoration: InputDecoration(
+                          hintText: 'Type a message...',
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(25),
+                            borderSide: BorderSide.none,
                           ),
+                          contentPadding: 
+                              const EdgeInsets.symmetric(horizontal: 16),
                         ),
-                      ],
-                    ),
-                ],
-              ),
-            ),
-          );
-        },
-      );
-    },
-  ),
-),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.attach_file, color: Color(0xFF073057)),
-                  onPressed: () => _attachFile(context),
-                ),
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: InputDecoration(
-                      hintText: 'Type a message...',
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
-                        borderSide: BorderSide.none,
+                        minLines: 1,
+                        maxLines: 5,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    _isUploading
+                        ? const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                        : IconButton(
+                            icon: const Icon(Icons.send, color:  const Color.fromARGB(255, 42, 79, 109)),
+                            onPressed: () => _sendMessage(context),
+                          ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                CircleAvatar(
-                  backgroundColor: const Color(0xFFA3C3E4),
-                  child: IconButton(
-                    icon: const Icon(Icons.send, color: Colors.white),
-                    onPressed: () => _sendMessage(context),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
@@ -260,67 +360,90 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _attachFile(BuildContext context) async {
-    debugPrint('[ATTACH FILE] Button pressed');
-    // TODO: Implement file attachment logic
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        setState(() {
+          _isUploading = true;
+        });
+
+        final messagingService = 
+            Provider.of<MessagingService>(context, listen: false);
+        
+        // TODO: Implement actual file upload logic
+        // For now, we'll simulate upload with a delay
+        await Future.delayed(const Duration(seconds: 1));
+        
+        // Generate mock attachment IDs
+        final newAttachmentIds = List.generate(
+          result.files.length,
+          (index) => 'att_${DateTime.now().millisecondsSinceEpoch}_$index',
+        );
+
+        setState(() {
+          _attachmentIds.addAll(newAttachmentIds);
+          _isUploading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isUploading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to attach files: $e')),
+      );
+    }
   }
 
   Future<void> _sendMessage(BuildContext context) async {
-  debugPrint('[ChatScreen] _sendMessage initiated');
-  debugPrint('[ChatScreen] Current user ID: $_currentUserId');
-  
-  final messageContent = _messageController.text.trim();
-  if (messageContent.isEmpty) {
-    debugPrint('[ChatScreen] Message content is empty - aborting');
-    return;
-  }
+    final messageContent = _messageController.text.trim();
+    if (messageContent.isEmpty && _attachmentIds.isEmpty) return;
 
-  if (_currentUserId.isEmpty) {
-    debugPrint('[ChatScreen] No current user ID available');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('You must be logged in to send messages')),
-    );
-    return;
-  }
+    if (_currentUserId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You must be logged in to send messages')),
+      );
+      return;
+    }
 
-  final recipientId = widget.otherParticipant['id'];
-  if (recipientId == null || recipientId.isEmpty) {
-    debugPrint('[ChatScreen] Invalid recipient ID: $recipientId');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Invalid recipient')),
-    );
-    return;
-  }
+    final recipientId = widget.otherParticipant['id'];
+    if (recipientId == null || recipientId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invalid recipient')),
+      );
+      return;
+    }
 
-  debugPrint('[ChatScreen] All pre-checks passed');
-  debugPrint('[ChatScreen] Message details:');
-  debugPrint('  - Sender: $_currentUserId');
-  debugPrint('  - Recipient: $recipientId');
-  debugPrint('  - Conversation ID: ${widget.conversationId}');
-  debugPrint('  - Connection ID: ${widget.connectionId}');
-  debugPrint('  - Content: ${messageContent.length > 50 ? messageContent.substring(0, 50) + "..." : messageContent}');
-
-  final messagingService = Provider.of<MessagingService>(context, listen: false);
-  
-  try {
-    debugPrint('[ChatScreen] Calling messagingService.sendMessage()');
-    await messagingService.sendMessage(
-      connectionId: widget.connectionId, 
-      conversationId: widget.conversationId,
-      senderId: _currentUserId,
-      recipientId: recipientId,
-      content: messageContent,
-      sendNotification: true,
-    );
+    final messagingService = Provider.of<MessagingService>(context, listen: false);
     
-    debugPrint('[ChatScreen] Message sent successfully');
-    _messageController.clear();
-    debugPrint('[ChatScreen] Message controller cleared');
-  } catch (e, stackTrace) {
-    debugPrint('[ChatScreen] ERROR sending message: $e');
-    debugPrint('[ChatScreen] Stack trace: $stackTrace');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Failed to send message: ${e.toString()}')),
-    );
+    try {
+      await messagingService.sendMessage(
+        connectionId: widget.connectionId, 
+        conversationId: widget.conversationId,
+        senderId: _currentUserId,
+        recipientId: recipientId,
+        content: messageContent,
+        attachmentIds: _attachmentIds,
+        sendNotification: true,
+      );
+      
+      _messageController.clear();
+      setState(() {
+        _attachmentIds.clear();
+      });
+      
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToBottom();
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to send message: ${e.toString()}')),
+      );
+    }
   }
-}
 }
