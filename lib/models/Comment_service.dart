@@ -28,20 +28,21 @@ class CommentService {
     }
   }
 
-  Future<void> addComment(Comment comment) async {
-    try {
-      await _firestore.collection('comments').add({
-        'patientId': comment.patientId,
-        'healthcareProfessionalId': comment.healthcareProfessionalId,
-        'comment': comment.comment,
-        'date': Timestamp.fromDate(comment.date),
-      });
-    } catch (e) {
-      print('Error adding comment: $e');
-      throw Exception('Failed to add comment');
-    }
+// Update your CommentService to match the fields you're using
+Future<void> addComment(Comment comment) async {
+  try {
+    await _firestore.collection('comments').add({
+      'patientId': comment.patientId,
+      'patientName': comment.patientName, // Add this
+      'healthcareProfessionalId': comment.healthcareProfessionalId,
+      'comment': comment.comment,
+      'date': Timestamp.fromDate(comment.date),
+    });
+  } catch (e) {
+    print('Error adding comment: $e');
+    throw Exception('Failed to add comment');
   }
-
+}
   Future<int?> getCommentCount(String professionalId) async {
     try {
       final querySnapshot = await _firestore
