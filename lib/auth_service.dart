@@ -29,7 +29,7 @@ class AuthService {
   Stream<User?> get userStream => _userStreamController.stream;
 
   // Email verification bypass
-  bool _debugSkipEmailVerification = true;
+  bool _debugSkipEmailVerification = false;
 
 
   bool get debugSkipEmailVerification => _debugSkipEmailVerification;
